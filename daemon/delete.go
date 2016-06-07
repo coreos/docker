@@ -126,10 +126,14 @@ func (daemon *Daemon) cleanupContainer(container *container.Container, forceRemo
 		return derr.ErrorCodeRmFS.WithArgs(container.ID, err)
 	}
 
-	metadata, err := daemon.layerStore.ReleaseRWLayer(container.RWLayer)
-	layer.LogReleaseMetadata(metadata)
-	if err != nil && err != layer.ErrMountDoesNotExist {
-		return derr.ErrorCodeRmDriverFS.WithArgs(daemon.GraphDriverName(), container.ID, err)
+	// When container creation fails and `RWLayer` has not been created yet, we
+	// do not call `ReleaseRWLayer`
+	if container.RWLayer != nil {
+		metadata, err := daemon.layerStore.ReleaseRWLayer(container.RWLayer)
+		layer.LogReleaseMetadata(metadata)
+		if err != nil && err != layer.ErrMountDoesNotExist {
+			return derr.ErrorCodeRmDriverFS.WithArgs(daemon.GraphDriverName(), container.ID, err)
+		}
 	}
 
 	if err = daemon.execDriver.Clean(container.ID); err != nil {
