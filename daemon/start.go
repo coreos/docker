@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"runtime"
+	"sort"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/container"
@@ -134,14 +135,15 @@ func (daemon *Daemon) containerStart(container *container.Container) (err error)
 		}
 	}
 
-	mounts, err := daemon.setupMounts(container)
+	ms, err := daemon.setupMounts(container)
 	if err != nil {
 		return err
 	}
-	mounts = append(mounts, container.IpcMounts()...)
-	mounts = append(mounts, container.TmpfsMounts()...)
+	ms = append(ms, container.IpcMounts()...)
+	ms = append(ms, container.TmpfsMounts()...)
+	sort.Sort(mounts(ms))
+	container.Command.Mounts = ms
 
-	container.Command.Mounts = mounts
 	if err := daemon.waitForStart(container); err != nil {
 		return err
 	}
@@ -169,4 +171,5 @@ func (daemon *Daemon) Cleanup(container *container.Container) {
 	if err := container.UnmountVolumes(false, daemon.LogVolumeEvent); err != nil {
 		logrus.Warnf("%s cleanup: Failed to umount volumes: %v", container.ID, err)
 	}
+	container.CancelAttachContext()
 }

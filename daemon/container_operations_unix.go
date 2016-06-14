@@ -1079,6 +1079,19 @@ func (daemon *Daemon) mountVolumes(container *container.Container) error {
 		if err := mount.Mount(m.Source, dest, "bind", opts); err != nil {
 			return err
 		}
+
+		// mountVolumes() seems to be called for temporary mounts
+		// outside the container. Soon these will be unmounted with
+		// lazy unmount option and given we have mounted the rbind,
+		// all the submounts will propagate if these are shared. If
+		// daemon is running in host namespace and has / as shared
+		// then these unmounts will propagate and unmount original
+		// mount as well. So make all these mounts rprivate.
+		// Do not use propagation property of volume as that should
+		// apply only when mounting happen inside the container.
+		if err := mount.MakeRPrivate(dest); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1093,7 +1106,9 @@ func killProcessDirectly(container *container.Container) error {
 				if err != syscall.ESRCH {
 					return err
 				}
-				logrus.Debugf("Cannot kill process (pid=%d) with signal 9: no such process.", pid)
+				e := errNoSuchProcess{pid, 9}
+				logrus.Debug(e)
+				return e
 			}
 		}
 	}
