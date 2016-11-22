@@ -26,9 +26,11 @@ func newJoinCommand(dockerCli *client.DockerCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "join [OPTIONS] HOST:PORT",
-		Short: "Join a swarm as a node and/or manager",
+		Short: "Join a swarm as a node and/or manager" + coreosShortWarning,
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			printCoreosWarning(dockerCli)
+
 			opts.remote = args[0]
 			return runJoin(dockerCli, opts)
 		},

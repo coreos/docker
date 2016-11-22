@@ -36,9 +36,10 @@ func newInitCommand(dockerCli *client.DockerCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "init [OPTIONS]",
-		Short: "Initialize a swarm",
+		Short: "Initialize a swarm" + coreosShortWarning,
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			printCoreosWarning(dockerCli)
 			return runInit(dockerCli, cmd.Flags(), opts)
 		},
 	}
