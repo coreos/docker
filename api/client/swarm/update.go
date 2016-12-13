@@ -17,9 +17,10 @@ func newUpdateCommand(dockerCli *client.DockerCli) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "update [OPTIONS]",
-		Short: "Update the swarm",
+		Short: "Update the swarm" + coreosShortWarning,
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			printCoreosWarning(dockerCli)
 			return runUpdate(dockerCli, cmd.Flags(), opts)
 		},
 	}
